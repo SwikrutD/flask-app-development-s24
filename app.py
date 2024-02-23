@@ -81,3 +81,25 @@ def add_entry():
     db.commit()
     flash('New entry was successfully posted')
     return redirect(url_for('show_entries'))
+
+
+@app.route('/delete', methods=['POST'])
+def delete_entry():
+    db = get_db()
+    db.execute('delete from entries where title = title',
+               [request.form['title'], request.form['text']])
+    db.commit()
+    flash('The entry was successfully deleted')
+    return redirect(url_for('show_entries'))
+
+@app.route('/update', methods=['POST'])
+def update_entry():
+    db = get_db()
+    db.execute('update entries set title = ?, text = ? where title = title',
+               [request.form['title'], request.form['text']])
+    db.commit()
+    flash('New entry was successfully posted')
+    return redirect(url_for('show_entries'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
