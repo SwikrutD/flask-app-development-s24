@@ -68,7 +68,7 @@ def close_db(error):
 @app.route('/')
 def show_entries():
     db = get_db()
-    cur = db.execute('select title, text from entries order by id desc')
+    cur = db.execute('select title, text, id, complete from entries order by id desc')
     entries = cur.fetchall()
     return render_template('show_entries.html', entries=entries)
 
@@ -76,30 +76,50 @@ def show_entries():
 @app.route('/add', methods=['POST'])
 def add_entry():
     db = get_db()
-    db.execute('insert into entries (title, text) values (?, ?)',
+
+    db.execute("insert into entries (title, text, complete) values (?, ?, 'incomplete')",
                [request.form['title'], request.form['text']])
     db.commit()
     flash('New entry was successfully posted')
+    return redirect(url_for('show_entries'))
+
+
+@app.route('/update', methods=['POST'])
+def update_entry():
+    db = get_db()
+    db.execute("update entries set title = ?, text = ?  where id = ? ",
+               [request.form['title'], request.form['text'], request.form.get('id')])
+    db.commit()
+    flash('Entry was successfully updated')
+    return redirect(url_for('show_entries'))
+
+
+@app.route('/update-redir', methods=['GET'])
+def update_redir():
+    id = request.args.get("id")
+    return render_template('update.html', id=id)
+
+
+@app.route('/update_complete', methods=['POST'])
+def update_complete():
+    db = get_db()
+    complete_val = request.form.get('complete')
+    db.execute("update entries set complete='complete' where id = ?",
+               [request.form.get('id')])
+    db.commit()
+    flash('The entry was successfully completed!')
     return redirect(url_for('show_entries'))
 
 
 @app.route('/delete', methods=['POST'])
 def delete_entry():
     db = get_db()
-    db.execute('delete from entries where title = title',
-               [request.form['title'], request.form['text']])
+    db.execute('delete from entries where id = ?',
+               [request.form.get('id')])
     db.commit()
     flash('The entry was successfully deleted')
     return redirect(url_for('show_entries'))
 
-@app.route('/update', methods=['POST'])
-def update_entry():
-    db = get_db()
-    db.execute('update entries set title = ?, text = ? where title = title',
-               [request.form['title'], request.form['text']])
-    db.commit()
-    flash('New entry was successfully posted')
-    return redirect(url_for('show_entries'))
 
 if __name__ == '__main__':
     app.run(debug=True)
